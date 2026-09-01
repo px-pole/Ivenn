@@ -2,17 +2,19 @@ import hashlib
 import json
 import sqlite3
 import zipfile
+from contextlib import closing
 
 from app.services.backup import apply_pending_restore, create_backup, get_generated_file, read_restore_status, write_export
 
 
 def _create_restore_database(path, item_name):
-    with sqlite3.connect(path) as database:
-        for table in ("users", "rooms", "categories", "attachments", "warranties"):
-            database.execute(f"CREATE TABLE {table} (id TEXT PRIMARY KEY)")
-        database.execute("CREATE TABLE household_items (id TEXT PRIMARY KEY, name TEXT)")
-        database.execute("INSERT INTO household_items VALUES ('item-1', ?)", (item_name,))
-        database.commit()
+    with closing(sqlite3.connect(path)) as database:
+        with database:
+            for table in ("users", "rooms", "categories", "attachments", "warranties"):
+                database.execute(f"CREATE TABLE {table} (id TEXT PRIMARY KEY)")
+            database.execute("CREATE TABLE household_items (id TEXT PRIMARY KEY, name TEXT)")
+            database.execute("INSERT INTO household_items VALUES ('item-1', ?)", (item_name,))
+            database.commit()
 
 
 def test_create_backup_contains_consistent_database_manifest_and_uploads(tmp_path):
@@ -22,12 +24,13 @@ def test_create_backup_contains_consistent_database_manifest_and_uploads(tmp_pat
     attachment = uploads / "receipt.png"
     attachment.write_bytes(b"receipt-image")
 
-    with sqlite3.connect(database_path) as database:
-        database.execute("CREATE TABLE household_items (id TEXT PRIMARY KEY)")
-        database.execute("CREATE TABLE attachments (id TEXT PRIMARY KEY)")
-        database.execute("INSERT INTO household_items VALUES ('item-1')")
-        database.execute("INSERT INTO attachments VALUES ('attachment-1')")
-        database.commit()
+    with closing(sqlite3.connect(database_path)) as database:
+        with database:
+            database.execute("CREATE TABLE household_items (id TEXT PRIMARY KEY)")
+            database.execute("CREATE TABLE attachments (id TEXT PRIMARY KEY)")
+            database.execute("INSERT INTO household_items VALUES ('item-1')")
+            database.execute("INSERT INTO attachments VALUES ('attachment-1')")
+            database.commit()
 
     artifact = create_backup(f"sqlite:///{database_path}", str(uploads))
 
