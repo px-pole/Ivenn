@@ -2,8 +2,6 @@
 
 Ivenn is a private, desktop-first household inventory and warranty tracker for recording possessions, receipts, serial numbers, and replacement values. It helps households prepare insurance-ready exports and avoid missed warranty expirations.
 
-The intended GitHub repository name is **`Ivenn-inventory-vault`**. The desktop app starts its own local FastAPI service and keeps household records on the device.
-
 ## Why this project matters
 
 This project combines a real-world data model with operational concerns that matter in production: secure uploads, structured reports, reminders, and clean API boundaries. It is a strong fit for a portfolio because it demonstrates practical backend work rather than just a toy CRUD app.
