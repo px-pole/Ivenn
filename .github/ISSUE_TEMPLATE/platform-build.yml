@@ -1,0 +1,57 @@
+name: Platform build report
+description: Report a Windows, Linux, or macOS build result
+labels:
+  - platform
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - Linux
+        - macOS
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: Operating system version
+      placeholder: Windows 11 24H2, macOS 15.1, Ubuntu 24.04
+    validations:
+      required: true
+  - type: input
+    id: architecture
+    attributes:
+      label: CPU architecture
+      placeholder: x86_64 or arm64
+    validations:
+      required: true
+  - type: textarea
+    id: toolchain
+    attributes:
+      label: Toolchain versions
+      description: Include Python, Node.js, rustc, and cargo versions.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Build and runtime result
+      description: Include the commands run, package format, startup result, database creation, and shutdown behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Verification
+      options:
+        - label: The application opened successfully.
+        - label: The local database was created or reopened successfully.
+        - label: PDF and CSV exports were tested.
+        - label: Closing the application released local port 8765.

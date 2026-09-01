@@ -1,0 +1,15 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.git/
+.gitignore
+.env
+.env.*
+!.env.example
+tests/
+_migration_gen.db
+_apply_check.db
+data/
+db_data/
