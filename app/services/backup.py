@@ -4,6 +4,7 @@ import shutil
 import sqlite3
 import tempfile
 import zipfile
+from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -56,12 +57,15 @@ def create_backup(database_url: str, storage_dir: str) -> GeneratedFile:
 
     with tempfile.TemporaryDirectory(dir=app_data_dir) as temporary_dir:
         snapshot_path = Path(temporary_dir) / "inventory.db"
-        with sqlite3.connect(database_path) as source, sqlite3.connect(snapshot_path) as snapshot:
-            source.backup(snapshot)
+        with closing(sqlite3.connect(database_path)) as source, closing(sqlite3.connect(snapshot_path)) as snapshot:
+            with source:
+                source.backup(snapshot)
+            snapshot.commit()
 
-        with sqlite3.connect(snapshot_path) as snapshot:
-            item_count = snapshot.execute("SELECT count(*) FROM household_items").fetchone()[0]
-            attachment_count = snapshot.execute("SELECT count(*) FROM attachments").fetchone()[0]
+        with closing(sqlite3.connect(snapshot_path)) as snapshot:
+            with snapshot:
+                item_count = snapshot.execute("SELECT count(*) FROM household_items").fetchone()[0]
+                attachment_count = snapshot.execute("SELECT count(*) FROM attachments").fetchone()[0]
 
         upload_dir = Path(storage_dir).resolve()
         upload_files = sorted(path for path in upload_dir.glob("*") if path.is_file()) if upload_dir.exists() else []
@@ -123,10 +127,11 @@ def _validate_member_names(archive: zipfile.ZipFile) -> None:
 
 def _validate_snapshot(path: Path) -> None:
     try:
-        with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as database:
-            if database.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
-                raise BackupValidationError("Backup database failed its integrity check")
-            tables = {row[0] for row in database.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as database:
+            with database:
+                if database.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                    raise BackupValidationError("Backup database failed its integrity check")
+                tables = {row[0] for row in database.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     except sqlite3.DatabaseError as exc:
         raise BackupValidationError("Backup database is not a valid SQLite file") from exc
     required_tables = {"users", "rooms", "categories", "household_items", "attachments", "warranties"}
