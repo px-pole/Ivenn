@@ -137,12 +137,16 @@ jobs:
         run: python -m pytest -q
 
       - name: Setup code signing (macOS)
-        if: runner.os == 'macOS' && secrets.MACOS_CERTIFICATE != ''
+        if: runner.os == 'macOS'
         env:
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
           MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
           MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
         run: |
+          if [ -z "$MACOS_CERTIFICATE" ]; then
+            echo "⚠️ Skipping macOS signing - certificate not configured"
+            exit 0
+          fi
           echo "$MACOS_CERTIFICATE" | base64 --decode > certificate.p12
           security create-keychain -p "$MACOS_CERTIFICATE_PWD" build.keychain
           security default-keychain -s build.keychain
@@ -151,12 +155,17 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CERTIFICATE_PWD" build.keychain
 
       - name: Setup code signing (Windows)
-        if: runner.os == 'Windows' && secrets.WINDOWS_CERTIFICATE != ''
+        if: runner.os == 'Windows'
         env:
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PWD: ${{ secrets.WINDOWS_CERTIFICATE_PWD }}
         run: |
-          echo "$env:WINDOWS_CERTIFICATE" | base64 -d | Set-Content certificate.pfx -Encoding Byte
+          if ($env:WINDOWS_CERTIFICATE -eq $null) {
+            Write-Output "⚠️ Skipping Windows signing - certificate not configured"
+            exit 0
+          }
+          $CertBytes = [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE)
+          Set-Content -Path certificate.pfx -Value $CertBytes -Encoding Byte
           # Windows signing configuration would be set in tauri.conf.json
 
       - name: Build native package
