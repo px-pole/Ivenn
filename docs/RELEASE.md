@@ -6,8 +6,8 @@ This document outlines how to create and publish a new release of Ivenn.
 
 - [ ] All changes merged to `main`
 - [ ] All tests passing: `pytest -q && npm --prefix desktop run build`
-- [ ] Version bumped in both places (see below)
-- [ ] Changelog updated (if maintained separately)
+- [ ] Version bumped in all three application manifests (see below)
+- [ ] `CHANGELOG.md` updated
 - [ ] Code signing configured (see [docs/code-signing.md](code-signing.md))
 - [ ] Auto-update signing keys generated (see [docs/auto-update.md](docs/auto-update.md))
 
@@ -17,17 +17,17 @@ Version is defined in two places:
 
 1. **Python backend** - `pyproject.toml`:
    ```toml
-   version = "0.2.0"
+   version = "0.1.2"
    ```
 
 2. **Desktop app** - `desktop/src-tauri/tauri.conf.json`:
    ```json
-   "version": "0.2.0"
+   "version": "0.1.2"
    ```
 
 3. **Node package** - `desktop/package.json`:
    ```json
-   "version": "0.2.0"
+   "version": "0.1.2"
    ```
 
 All three must match the git tag exactly.
@@ -57,28 +57,26 @@ npm version patch
 
 # Commit version bump
 git add pyproject.toml desktop/package.json desktop/src-tauri/tauri.conf.json
-git commit -m "chore: bump version to 0.2.0"
+git commit -m "chore: bump version to 0.1.2"
 
 # Create tag
-git tag -a v0.2.0 -m "Release v0.2.0"
+git tag -a v0.1.2 -m "Release v0.1.2"
 
 # Push commits and tag
 git push origin main
-git push origin v0.2.0
+git push origin v0.1.2
 ```
 
 ### Method 2: GitHub Release UI
 
 1. Go to [Releases](https://github.com/your-org/inventory-vault/releases)
 2. Click "Draft a new release"
-3. Tag: `v0.2.0` (must match versions in config)
-4. Title: "Ivenn v0.2.0"
+3. Tag: `v0.1.2` (must match versions in config)
+4. Title: "Ivenn v0.1.2"
 5. Click "Auto-generate release notes"
 6. Save as draft first
 
-Then either:
-- **Push the tag** to trigger builds, or
-- **Trigger manually:** Go to [Actions](https://github.com/your-org/inventory-vault/actions) → "Release Platform Packages" → "Run workflow" → select the tag
+The workflow accepts an existing tag when run manually. For `0.1.2`, select or enter `v0.1.2` as the workflow tag input.
 
 ## Build Process
 
@@ -95,13 +93,9 @@ When a version tag is pushed or workflow is manually triggered:
 
 ## Publishing Release
 
-Once builds complete:
+When all Windows, Linux, and macOS package jobs succeed, the workflow publishes the release automatically. If any platform fails, the release remains a draft for investigation.
 
-1. Go to [Releases](https://github.com/your-org/inventory-vault/releases)
-2. Find the new draft release
-3. Review artifacts and installation instructions
-4. Verify all platforms present
-5. Click "Publish release"
+Before publishing a production release, verify the three uploaded platform artifacts and installation instructions in the draft release.
 
 Users will be notified via:
 - GitHub "Watch" notifications

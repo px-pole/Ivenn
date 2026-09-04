@@ -155,7 +155,7 @@ npm run tauri build
 
 Build outputs use the native format for the current platform: Windows installers (`.exe`), macOS app bundles/DMG, and Linux AppImage. Linux AppImages are written under `desktop/src-tauri/target/release/bundle/appimage/`.
 
-Builds are created automatically by CI/CD when you push a version tag (e.g., `git tag v0.2.0 && git push --tags`). Artifacts are attached to the GitHub release and signed where supported.
+Builds are created automatically by CI/CD when you push a version tag (e.g., `git tag v0.1.2 && git push --tags`). Artifacts are attached to the GitHub release and signed where supported.
 
 ### Notes on Features
 

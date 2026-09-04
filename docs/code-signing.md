@@ -154,7 +154,7 @@ Code signing only matters for official releases distributed to users.
 
 To verify signing works:
 
-1. Push a tag: `git tag v0.2.0 && git push --tags`
+1. Push a tag: `git tag v0.1.2 && git push --tags`
 2. Check the [Actions](https://github.com/your-org/inventory-vault/actions) tab
 3. Review the draft release
 4. Verify files are present and have signatures where enabled

@@ -108,7 +108,7 @@ Artifacts are written under `desktop/src-tauri/target/release/bundle/`.
 
 For detailed release procedures, see [docs/RELEASE.md](docs/RELEASE.md).
 
-Releases are triggered by pushing a version tag (e.g., `git tag v0.2.0`), which:
+Releases are triggered by pushing a version tag (e.g., `git tag v0.1.2`), which:
 - Automatically builds installers for Windows, macOS, and Linux
 - Signs artifacts if secrets are configured
 - Creates a GitHub release with installation instructions

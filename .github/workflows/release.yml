@@ -2,6 +2,12 @@ name: Release Platform Packages
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to build and publish
+        required: true
+        default: v0.1.2
+        type: string
   push:
     tags:
       - 'v*'
@@ -19,13 +25,26 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       release_body: ${{ steps.release_notes.outputs.body }}
+      tag_name: ${{ steps.release_metadata.outputs.tag_name }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+      - name: Resolve release metadata
+        id: release_metadata
+        shell: bash
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          echo "tag_name=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Generate release notes
         id: release_notes
+        env:
+          TAG_NAME: ${{ steps.release_metadata.outputs.tag_name }}
+          VERSION: ${{ steps.release_metadata.outputs.version }}
         run: |
-          VERSION=${{ github.ref_name }}
-          cat > release_body.md << 'EOF'
+          cat > release_body.md << EOF
           # Ivenn Inventory Vault $VERSION
 
           ## Installation
@@ -66,6 +85,8 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.release_metadata.outputs.tag_name }}
+          name: Ivenn ${{ steps.release_metadata.outputs.version }}
           draft: true
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
           body: ${{ steps.release_notes.outputs.body }}
@@ -95,6 +116,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -209,10 +232,12 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Check build status
-        if: failure()
-        run: echo "Build failed for some platforms. Release created as draft."
-
-      - name: Release ready
-        if: success()
-        run: echo "All platforms built successfully. Review the draft release and publish when ready."
+      - name: Publish release after all platform builds pass
+        if: needs.package.result == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.create-release.outputs.tag_name }}
+        run: gh release edit "$RELEASE_TAG" --draft=false
+      - name: Keep release as draft after a platform failure
+        if: needs.package.result != 'success'
+        run: echo "A platform build failed. The release remains a draft for investigation."
