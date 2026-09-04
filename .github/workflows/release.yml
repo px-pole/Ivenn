@@ -50,35 +50,37 @@ jobs:
           ## Installation
 
           ### Windows
-          Download `Ivenn___VERSION___x64-setup.exe` and run the installer.
+          Download the Windows `.exe` installer, then run it.
           - Requires Windows 10 or later
-          - WebView2 is included or auto-installed
+          - WebView2 is included or installed automatically when needed
 
           ### macOS
-          Download `Ivenn___VERSION___x64.dmg` and open it.
-          - Drag Ivenn to Applications folder
+          Download the `.dmg` for your Mac architecture and open it.
+          - Drag Ivenn to the Applications folder
           - Requires macOS 10.15 or later
 
           ### Linux
-          Download the `.AppImage` for your architecture:
-          - Mark it executable: `chmod +x Ivenn___VERSION___x64.AppImage`
-          - Run it: `./Ivenn___VERSION___x64.AppImage`
+          Download the `.AppImage` for your architecture, then run:
+          ```bash
+          chmod +x Ivenn___VERSION___*.AppImage
+          ./Ivenn___VERSION___*.AppImage
+          ```
 
           **System Requirements:**
-          - WebKitGTK 4.1+: `sudo apt-get install libwebkit2gtk-4.1-0`
-          - Optional OCR: `sudo apt-get install tesseract-ocr`
+          - WebKitGTK 4.1 runtime: `sudo apt-get install libwebkit2gtk-4.1-0`
+          - Optional receipt OCR: `sudo apt-get install tesseract-ocr tesseract-ocr-eng`
 
           ## What's Changed
 
-          This is a new release. See [commits](https://github.com/${{ github.repository }}/commits/__VERSION__) for details.
+          See the [commits for this release](https://github.com/${{ github.repository }}/commits/__TAG_NAME__).
 
           ## Security & Privacy
 
-          - All data is stored locally on your device
+          - Inventory data is stored locally on your device
           - No telemetry or data collection
-          - No internet connection required to use the app
+          - Internet access is only needed for update checks and downloads
           EOF
-          sed -i "s/__VERSION__/${VERSION}/g" release_body.md
+          sed -i "s/__VERSION__/${VERSION}/g; s/__TAG_NAME__/${TAG_NAME}/g" release_body.md
           body=$(cat release_body.md | jq -Rs .)
           echo "body=${body}" >> $GITHUB_OUTPUT
 
