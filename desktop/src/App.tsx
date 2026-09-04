@@ -131,7 +131,7 @@ function App() {
       .finally(() => setLoading(false))
 
     return () => controller.abort()
-  }, [])
+  }, [t])
 
   useEffect(() => {
     document.documentElement.lang = activeLanguage
