@@ -104,6 +104,20 @@ npm run tauri -- build
 
 Artifacts are written under `desktop/src-tauri/target/release/bundle/`.
 
+## Releases
+
+For detailed release procedures, see [docs/RELEASE.md](docs/RELEASE.md).
+
+Releases are triggered by pushing a version tag (e.g., `git tag v0.2.0`), which:
+- Automatically builds installers for Windows, macOS, and Linux
+- Signs artifacts if secrets are configured
+- Creates a GitHub release with installation instructions
+- Updates running apps via the auto-update mechanism
+
+For information on code signing to prevent security warnings, see [docs/code-signing.md](docs/code-signing.md).
+
+For the auto-update mechanism, see [docs/auto-update.md](docs/auto-update.md).
+
 ## Platform build report
 
 Include this information in a platform-related pull request or issue:

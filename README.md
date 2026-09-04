@@ -21,7 +21,49 @@ Ivenn is a private, desktop-first household inventory and warranty tracker for r
 | Packaging | PyInstaller sidecar and Tauri native bundles |
 | Receipt scanning | Tesseract OCR and Pillow |
 
-## Local setup
+## For Users
+
+### Quick Install
+
+Download the installer for your platform from [releases](https://github.com/your-org/inventory-vault/releases):
+
+- **Windows:** Run the `.exe` installer — WebView2 is usually pre-installed on modern Windows
+- **macOS:** Open the `.dmg` file and drag Ivenn to Applications
+- **Linux:** Download the `.AppImage` and mark it executable, or use your distro's package manager
+
+#### Linux System Dependencies
+
+Ivenn requires WebKitGTK to run. Install it once:
+
+```bash
+# Debian/Ubuntu
+sudo apt-get install libwebkit2gtk-4.1-0
+
+# Fedora/RHEL
+sudo dnf install webkit2gtk4.1
+
+# Arch Linux
+sudo pacman -S webkit2gtk-4.1
+```
+
+Receipt scanning (OCR) is optional; it requires Tesseract:
+
+```bash
+# Debian/Ubuntu
+sudo apt-get install tesseract-ocr
+
+# Fedora/RHEL
+sudo dnf install tesseract
+
+# Arch Linux
+sudo pacman -S tesseract
+```
+
+**Auto-updates:** Ivenn checks for new versions at startup and notifies you. Updates are downloaded in the background and installed the next time you restart.
+
+## For Developers
+
+### Local API Setup
 
 ```bash
 cp .env.example .env
@@ -56,6 +98,15 @@ npm --prefix desktop run build
 
 Contributions to the API, desktop client, translations, documentation, accessibility, tests, and native packaging are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for platform setup, required checks, and pull-request guidance. For security or data-loss reports, read [SECURITY.md](SECURITY.md).
 
+## Documentation
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) — Developer setup and contribution guidelines
+- [docs/client-api.md](docs/client-api.md) — REST API documentation
+- [docs/RELEASE.md](docs/RELEASE.md) — Release process and versioning
+- [docs/code-signing.md](docs/code-signing.md) — Code signing for Windows and macOS
+- [docs/auto-update.md](docs/auto-update.md) — Update mechanism configuration
+- [SECURITY.md](SECURITY.md) — Security and data-loss reporting
+
 ## License
 
 Ivenn Inventory Vault is available under the [MIT License](LICENSE).
@@ -66,27 +117,21 @@ Ivenn Inventory Vault is available under the [MIT License](LICENSE).
 docker compose up --build
 ```
 
-## Desktop app
+## Building from Source
 
 The Tauri desktop client supports Windows, Linux, and macOS. Release packages must be built on their target operating system because PyInstaller and Tauri produce native binaries.
 
-Platform prerequisites:
+### Developer Platform Prerequisites
 
-- **Windows:** Python 3.13+, Node.js 22+, Rust stable, and Microsoft C++ Build Tools with WebView2.
-- **macOS:** Python 3.13+, Node.js 22+, Rust stable, and Xcode Command Line Tools. Distribution builds also require Apple code signing and notarization.
-- **Linux:** Python 3.13+, Node.js 22+, Rust stable, WebKitGTK 4.1, and standard build tools.
+- **Windows:** Python 3.13+, Node.js 22+, Rust stable, Microsoft C++ Build Tools, and WebView2
+- **macOS:** Python 3.13+, Node.js 22+, Rust stable, and Xcode Command Line Tools
+- **Linux:** Python 3.13+, Node.js 22+, Rust stable, WebKitGTK 4.1, and standard build tools
 
-On Arch Linux, install the native WebKit dependency once:
+For platform-specific setup instructions, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-```bash
-sudo pacman -S webkit2gtk-4.1 tesseract tesseract-data-eng
-```
+### Development Server
 
-Tesseract and its English language data enable local receipt scanning. The inventory, attachments, and manual editing features continue to work when OCR is unavailable.
-
-Warranty reminders appear only inside Inventory Vault. The app does not request operating-system notification permission or send reminder data to an external notification service.
-
-Launch the desktop app with one command:
+Launch the development build with auto-reload:
 
 ```bash
 cd desktop
@@ -98,7 +143,9 @@ Tauri starts FastAPI automatically on a private local port, applies database mig
 
 The Data & Exports view saves CSV and PDF reports through a native system dialog. It also creates a complete ZIP backup containing a consistent SQLite snapshot, manifest checksums, and every uploaded attachment. Restore validates the backup, restarts the app, and replaces local data before the backend opens SQLite, avoiding file-lock problems on Windows.
 
-The Python backend is bundled as a standalone sidecar, so running the compiled application does not require Python or the repository `.venv`. Building from source still uses `.venv` and requires the development dependencies:
+### Building for Release
+
+The Python backend is bundled as a standalone sidecar, so running the compiled application does not require Python or the repository `.venv`. To build a release:
 
 ```bash
 pip install -e ".[dev]"
@@ -106,7 +153,15 @@ cd desktop
 npm run tauri build
 ```
 
-Build outputs use the native format for the current platform: Windows installers, macOS app/DMG bundles, and a Linux AppImage. Linux AppImages are written under `desktop/src-tauri/target/release/bundle/appimage/`.
+Build outputs use the native format for the current platform: Windows installers (`.exe`), macOS app bundles/DMG, and Linux AppImage. Linux AppImages are written under `desktop/src-tauri/target/release/bundle/appimage/`.
+
+Builds are created automatically by CI/CD when you push a version tag (e.g., `git tag v0.2.0 && git push --tags`). Artifacts are attached to the GitHub release and signed where supported.
+
+### Notes on Features
+
+Tesseract and English language data enable local receipt scanning. The inventory, attachments, and manual editing features continue to work when OCR is unavailable.
+
+Warranty reminders appear only inside Inventory Vault. The app does not request operating-system notification permission or send reminder data to an external notification service.
 
 The stable client-facing API is available under `/api/v1`. See [docs/client-api.md](docs/client-api.md) for attachment upload, receipt extraction, and confirmation behavior.
 

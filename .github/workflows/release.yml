@@ -1,0 +1,209 @@
+name: Release Platform Packages
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_body: ${{ steps.release_notes.outputs.body }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          VERSION=${{ github.ref_name }}
+          cat > release_body.md << 'EOF'
+          # Ivenn Inventory Vault $VERSION
+
+          ## Installation
+
+          ### Windows
+          Download `Ivenn_$VERSION_x64-setup.exe` and run the installer.
+          - Requires Windows 10 or later
+          - WebView2 is included or auto-installed
+
+          ### macOS
+          Download `Ivenn_$VERSION_x64.dmg` and open it.
+          - Drag Ivenn to Applications folder
+          - Requires macOS 10.15 or later
+
+          ### Linux
+          Download the `.AppImage` for your architecture:
+          - Mark it executable: `chmod +x Ivenn_$VERSION_x64.AppImage`
+          - Run it: `./Ivenn_$VERSION_x64.AppImage`
+
+          **System Requirements:**
+          - WebKitGTK 4.1+: `sudo apt-get install libwebkit2gtk-4.1-0`
+          - Optional OCR: `sudo apt-get install tesseract-ocr`
+
+          ## What's Changed
+
+          This is a new release. See [commits](https://github.com/${{ github.repository }}/commits/$VERSION) for details.
+
+          ## Security & Privacy
+
+          - All data is stored locally on your device
+          - No telemetry or data collection
+          - No internet connection required to use the app
+          EOF
+          body=$(cat release_body.md | jq -Rs .)
+          echo "body=${body}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+          body: ${{ steps.release_notes.outputs.body }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  package:
+    name: Package ${{ matrix.platform }}
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            os: windows-latest
+            artifact_name: inventory-vault-windows
+            build_args: ""
+          - platform: linux
+            os: ubuntu-latest
+            artifact_name: inventory-vault-linux
+            build_args: ""
+          - platform: macos
+            os: macos-latest
+            artifact_name: inventory-vault-macos
+            build_args: ""
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux desktop dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install create-dmg
+
+      - name: Install project dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          npm ci --prefix desktop
+
+      - name: Run backend tests
+        run: python -m pytest -q
+
+      - name: Setup code signing (macOS)
+        if: runner.os == 'macOS' && secrets.MACOS_CERTIFICATE != ''
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        run: |
+          echo "$MACOS_CERTIFICATE" | base64 --decode > certificate.p12
+          security create-keychain -p "$MACOS_CERTIFICATE_PWD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$MACOS_CERTIFICATE_PWD" build.keychain
+          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CERTIFICATE_PWD" build.keychain
+
+      - name: Setup code signing (Windows)
+        if: runner.os == 'Windows' && secrets.WINDOWS_CERTIFICATE != ''
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PWD: ${{ secrets.WINDOWS_CERTIFICATE_PWD }}
+        run: |
+          echo "$env:WINDOWS_CERTIFICATE" | base64 -d | Set-Content certificate.pfx -Encoding Byte
+          # Windows signing configuration would be set in tauri.conf.json
+
+      - name: Build native package
+        working-directory: desktop
+        run: npm run tauri -- build
+        env:
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY || '' }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
+
+      - name: Get build artifacts
+        id: artifacts
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            echo "files=desktop/src-tauri/target/release/bundle/msi/*" >> $GITHUB_OUTPUT
+          elif [ "${{ runner.os }}" = "macOS" ]; then
+            echo "files=desktop/src-tauri/target/release/bundle/dmg/*" >> $GITHUB_OUTPUT
+          else
+            echo "files=desktop/src-tauri/target/release/bundle/appimage/*" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - name: Upload artifacts to release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: ${{ steps.artifacts.outputs.files }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifact for retention
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: desktop/src-tauri/target/release/bundle/**
+          retention-days: 14
+
+  finalize-release:
+    name: Finalize Release
+    needs: package
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check build status
+        if: failure()
+        run: echo "Build failed for some platforms. Release created as draft."
+
+      - name: Release ready
+        if: success()
+        run: echo "All platforms built successfully. Review the draft release and publish when ready."
