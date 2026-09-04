@@ -41,6 +41,28 @@
     ],
     "android": {
       "debugApplicationIdSuffix": ".debug"
-    }
+    },
+    "windows": [
+      {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "signingIdentity": null,
+        "timestampUrl": ""
+      }
+    ],
+    "macOS": [
+      {
+        "certificateThumbprint": null,
+        "signingIdentity": null
+      }
+    ]
+  },
+  "updater": {
+    "active": true,
+    "dialog": true,
+    "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVFRDNEMTMxOUJDRTlGNEYKUldSUG44NmJNZEhUN29BdXd6U0ZOaE1YMVRJbzFycUNML3pERE5tZVp3M1hqRnM4RDNzdU0rL2QK",
+    "endpoints": [
+      "https://api.github.com/repos/px-pole/inventory-vault/releases/latest"
+    ]
   }
 }
