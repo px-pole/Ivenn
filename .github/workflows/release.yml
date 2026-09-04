@@ -240,7 +240,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ needs.create-release.outputs.tag_name }}
-        run: gh release edit "$RELEASE_TAG" --draft=false
+        run: gh release edit "$RELEASE_TAG" --draft=false --repo "$GITHUB_REPOSITORY"
       - name: Keep release as draft after a platform failure
         if: needs.package.result != 'success'
         run: echo "A platform build failed. The release remains a draft for investigation."
