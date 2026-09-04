@@ -131,7 +131,8 @@ function App() {
       .finally(() => setLoading(false))
 
     return () => controller.abort()
-  }, [t])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     document.documentElement.lang = activeLanguage
