@@ -6,7 +6,7 @@ on:
       tag:
         description: Existing version tag to build and publish
         required: true
-        default: v0.1.2
+        default: v0.1.21
         type: string
   push:
     tags:
@@ -44,25 +44,25 @@ jobs:
           TAG_NAME: ${{ steps.release_metadata.outputs.tag_name }}
           VERSION: ${{ steps.release_metadata.outputs.version }}
         run: |
-          cat > release_body.md << EOF
-          # Ivenn Inventory Vault $VERSION
+          cat > release_body.md << 'EOF'
+          # Ivenn Inventory Vault __VERSION__
 
           ## Installation
 
           ### Windows
-          Download `Ivenn_$VERSION_x64-setup.exe` and run the installer.
+          Download `Ivenn___VERSION___x64-setup.exe` and run the installer.
           - Requires Windows 10 or later
           - WebView2 is included or auto-installed
 
           ### macOS
-          Download `Ivenn_$VERSION_x64.dmg` and open it.
+          Download `Ivenn___VERSION___x64.dmg` and open it.
           - Drag Ivenn to Applications folder
           - Requires macOS 10.15 or later
 
           ### Linux
           Download the `.AppImage` for your architecture:
-          - Mark it executable: `chmod +x Ivenn_$VERSION_x64.AppImage`
-          - Run it: `./Ivenn_$VERSION_x64.AppImage`
+          - Mark it executable: `chmod +x Ivenn___VERSION___x64.AppImage`
+          - Run it: `./Ivenn___VERSION___x64.AppImage`
 
           **System Requirements:**
           - WebKitGTK 4.1+: `sudo apt-get install libwebkit2gtk-4.1-0`
@@ -70,7 +70,7 @@ jobs:
 
           ## What's Changed
 
-          This is a new release. See [commits](https://github.com/${{ github.repository }}/commits/$VERSION) for details.
+          This is a new release. See [commits](https://github.com/${{ github.repository }}/commits/__VERSION__) for details.
 
           ## Security & Privacy
 
@@ -78,6 +78,7 @@ jobs:
           - No telemetry or data collection
           - No internet connection required to use the app
           EOF
+          sed -i "s/__VERSION__/${VERSION}/g" release_body.md
           body=$(cat release_body.md | jq -Rs .)
           echo "body=${body}" >> $GITHUB_OUTPUT
 
@@ -88,7 +89,7 @@ jobs:
           tag_name: ${{ steps.release_metadata.outputs.tag_name }}
           name: Ivenn ${{ steps.release_metadata.outputs.version }}
           draft: true
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+          prerelease: ${{ contains(steps.release_metadata.outputs.tag_name, 'alpha') || contains(steps.release_metadata.outputs.tag_name, 'beta') }}
           body: ${{ steps.release_notes.outputs.body }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -128,7 +129,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: desktop/package-lock.json
 
@@ -143,7 +144,9 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libappindicator3-dev \
             librsvg2-dev \
-            patchelf
+            patchelf \
+            tesseract-ocr \
+            tesseract-ocr-eng
 
       - name: Install macOS dependencies
         if: runner.os == 'macOS'
@@ -183,12 +186,12 @@ jobs:
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PWD: ${{ secrets.WINDOWS_CERTIFICATE_PWD }}
         run: |
-          if ($env:WINDOWS_CERTIFICATE -eq $null) {
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE)) {
             Write-Output "⚠️ Skipping Windows signing - certificate not configured"
             exit 0
           }
           $CertBytes = [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE)
-          Set-Content -Path certificate.pfx -Value $CertBytes -Encoding Byte
+          [IO.File]::WriteAllBytes((Join-Path $PWD "certificate.pfx"), $CertBytes)
           # Windows signing configuration would be set in tauri.conf.json
 
       - name: Build native package
@@ -228,7 +231,7 @@ jobs:
 
   finalize-release:
     name: Finalize Release
-    needs: package
+    needs: [create-release, package]
     runs-on: ubuntu-latest
     if: always()
     steps:

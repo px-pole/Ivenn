@@ -5,7 +5,7 @@ This document outlines how to create and publish a new release of Ivenn.
 ## Pre-Release Checklist
 
 - [ ] All changes merged to `main`
-- [ ] All tests passing: `pytest -q && npm --prefix desktop run build`
+- [ ] All tests passing: `pytest -q && npm --prefix desktop run lint && npm --prefix desktop run build`
 - [ ] Version bumped in all three application manifests (see below)
 - [ ] `CHANGELOG.md` updated
 - [ ] Code signing configured (see [docs/code-signing.md](code-signing.md))
@@ -17,17 +17,17 @@ Version is defined in two places:
 
 1. **Python backend** - `pyproject.toml`:
    ```toml
-   version = "0.1.2"
+   version = "0.1.21"
    ```
 
 2. **Desktop app** - `desktop/src-tauri/tauri.conf.json`:
    ```json
-   "version": "0.1.2"
+   "version": "0.1.21"
    ```
 
 3. **Node package** - `desktop/package.json`:
    ```json
-   "version": "0.1.2"
+   "version": "0.1.21"
    ```
 
 All three must match the git tag exactly.
@@ -57,22 +57,22 @@ npm version patch
 
 # Commit version bump
 git add pyproject.toml desktop/package.json desktop/src-tauri/tauri.conf.json
-git commit -m "chore: bump version to 0.1.2"
+git commit -m "chore: bump version to 0.1.21"
 
 # Create tag
-git tag -a v0.1.2 -m "Release v0.1.2"
+git tag -a v0.1.21 -m "Release v0.1.21"
 
 # Push commits and tag
 git push origin main
-git push origin v0.1.2
+git push origin v0.1.21
 ```
 
 ### Method 2: GitHub Release UI
 
 1. Go to [Releases](https://github.com/your-org/inventory-vault/releases)
 2. Click "Draft a new release"
-3. Tag: `v0.1.2` (must match versions in config)
-4. Title: "Ivenn v0.1.2"
+3. Tag: `v0.1.21` (must match versions in config)
+4. Title: "Ivenn v0.1.21"
 5. Click "Auto-generate release notes"
 6. Save as draft first
 

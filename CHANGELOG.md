@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.21 - 2026-09-04
+
+### Release
+
+- Prepared the cross-platform Windows, Linux, and macOS release workflow.
+- Targeted Node.js 24 in GitHub Actions.
+- Included the Windows signing-step fix for empty certificate secrets.
+- Published the current desktop, OCR, warranty, notification, export, and backup/restore work as the 0.1.21 release candidate.
+
 ## 0.1.2 - 2026-09-04
 
 ### Added

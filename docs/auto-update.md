@@ -49,7 +49,7 @@ Ivenn uses Tauri's built-in updater to automatically check for and install new v
 
 The `.github/workflows/release.yml` handles:
 
-1. **Detects version tags:** `git tag v0.1.2`
+1. **Detects version tags:** `git tag v0.1.21`
 2. **Builds on all platforms** with signing
 3. **Signs artifacts** using the private key
 4. **Creates GitHub release** with `latest` tag

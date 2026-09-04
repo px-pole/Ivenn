@@ -123,9 +123,9 @@ The Tauri desktop client supports Windows, Linux, and macOS. Release packages mu
 
 ### Developer Platform Prerequisites
 
-- **Windows:** Python 3.13+, Node.js 22+, Rust stable, Microsoft C++ Build Tools, and WebView2
-- **macOS:** Python 3.13+, Node.js 22+, Rust stable, and Xcode Command Line Tools
-- **Linux:** Python 3.13+, Node.js 22+, Rust stable, WebKitGTK 4.1, and standard build tools
+- **Windows:** Python 3.13+, Node.js 24+, Rust stable, Microsoft C++ Build Tools, and WebView2
+- **macOS:** Python 3.13+, Node.js 24+, Rust stable, and Xcode Command Line Tools
+- **Linux:** Python 3.13+, Node.js 24+, Rust stable, WebKitGTK 4.1, and standard build tools
 
 For platform-specific setup instructions, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -155,7 +155,7 @@ npm run tauri build
 
 Build outputs use the native format for the current platform: Windows installers (`.exe`), macOS app bundles/DMG, and Linux AppImage. Linux AppImages are written under `desktop/src-tauri/target/release/bundle/appimage/`.
 
-Builds are created automatically by CI/CD when you push a version tag (e.g., `git tag v0.1.2 && git push --tags`). Artifacts are attached to the GitHub release and signed where supported.
+Builds are created automatically by CI/CD when you push a version tag (e.g., `git tag v0.1.21 && git push --tags`). Artifacts are attached to the GitHub release and signed where supported.
 
 ### Notes on Features
 
